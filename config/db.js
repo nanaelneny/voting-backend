@@ -1,21 +1,29 @@
 const sql = require("mssql");
+require("dotenv").config();
 
-const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    server: process.env.DB_SERVER,
-    database: process.env.DB_NAME,
+const dbConfig = {
+    user: process.env.DB_USER, // e.g., 'sa'
+    password: process.env.DB_PASSWORD, // e.g., 'yourStrong(!)Password'
+    server: process.env.DB_SERVER, // 🟢 e.g., 'localhost' or '127.0.0.1'
+    database: process.env.DB_NAME, // e.g., 'VotingDB'
     options: {
-        encrypt: false,
-        trustServerCertificate: true
+        encrypt: true, // use true for Azure
+        trustServerCertificate: true, // change to true for local dev / self-signed certs
     }
 };
 
-const pool = new sql.ConnectionPool(config);
-const poolConnect = pool.connect();
+const poolPromise = new sql.ConnectionPool(dbConfig)
+    .connect()
+    .then(pool => {
+        console.log("✅ Connected to SQL Server");
+        return pool;
+    })
+    .catch(err => {
+        console.error("❌ Database connection failed:", err);
+        process.exit(1);
+    });
 
-pool.on("error", err => {
-    console.error("❌ SQL Server Error:", err);
-});
-
-module.exports = { sql, pool, poolConnect };
+module.exports = {
+    sql,
+    poolPromise
+};
